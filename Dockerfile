@@ -1,4 +1,4 @@
-FROM julykobe/falcon
+FROM julykobe/centos-falcon
 
 MAINTAINER Freddie Zhang<myzswen@gmail.com>
 
