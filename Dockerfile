@@ -1,4 +1,4 @@
-FROM falcon
+FROM julykobe/falcon
 
 MAINTAINER Freddie Zhang<myzswen@gmail.com>
 
