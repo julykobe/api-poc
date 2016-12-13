@@ -1,13 +1,18 @@
+import requests
+
 class Object:
 
-    def __init__(self):
-        self.logger = logging.getLogger()
+    def on_get(self, req, resp, name):
 
-    def on_get(self, req, resp):
-        host = req.get_header('Host')
-        bucketName = host.split('.')[0]
-        print bucketName
-        resp.body = (bucketName)
+        url = 'https://Jeff-ESXi-IP:Port/%s' % name
+        headers = {'bucket-uuid': req.context['bucketUuid']}
+        # r = requests.get(url, headers=headers)
+        # r.content
+        resp.body = (name)
 
     def on_put(self, req, resp):
-        pass
+        url = 'https://Jeff-ESXi-IP:Port/%s' % name
+        headers = {'bucket-uuid': req.context['bucketUuid']}
+        # r = requests.put(url, headers=headers)
+
+        resp.status = r.headers['Status']
