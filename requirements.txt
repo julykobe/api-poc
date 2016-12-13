@@ -1,2 +1,4 @@
+requests
+SQLAlchemy
 falcon
 gunicorn
