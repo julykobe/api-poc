@@ -2,3 +2,4 @@ requests
 SQLAlchemy
 falcon
 gunicorn
+MySQL-python
