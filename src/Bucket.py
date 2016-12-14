@@ -5,8 +5,9 @@ from sqlalchemy.types import *
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from config import getEsxHosts, getMysqlConnectionString
 
-engine = create_engine('mysql://root:password@localhost/s5')
+engine = create_engine(getMysqlConnectionString())
 DBSession = sessionmaker(bind=engine)
 session = DBSession()
 
@@ -25,23 +26,24 @@ class Bucket(BaseModel):
         return "<Bucket bucket name: %s>" % self.name
 
     def on_get(self, req, resp):
+        esx_host = getEsxHosts()[0]
 
-        # call Jeff to get objects under bucket
-        url = 'https://Jeff-ESXi-IP:Port'
-        headers = {'bucket-uuid': req.context['bucketUuid']}
-        # r = requests.get(url, headers=headers)
+        url = 'http://%s' % esx_host
+        headers = {'x-bucket-uuid': req.context['bucketUuid']}
+        r = requests.get(url, headers=headers)
 
         resp.set_header('FoundBucket', req.context['bucketUuid'])
-        # resp.body = r.content
+        resp.body = r.text
 
     def on_put(self, req, resp):
-        # call Jeff to get a bucket uuid
-        url = 'https://Jeff-ESXi-IP:Port'
-        r = requests.get(url)
-        uuid = r.content# wrong
+        esx_host = getEsxHosts()[0]
+
+        url = 'http://%s' % esx_host
+        r = requests.put(url)
+        uuid = r.headers['x-bucket-uuid']
 
         bucketName = getBucketName(req)
-        bucket = Bucket(name=bucketName, uuid = uuid)
+        bucket = Bucket(name=bucketName, uuid=uuid)
         session.add(bucket)
         session.commit()
 
