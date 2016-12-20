@@ -1,3 +1,4 @@
+import falcon
 import logging
 import requests
 from sqlalchemy import Column
@@ -14,6 +15,27 @@ session = DBSession()
 BaseModel = declarative_base()
 
 # self.logger = logging.getLogger()
+
+def validateBucketName(req, resp, resource, params):
+    bucketName = getBucketName(req)
+
+    if session.query(Bucket).filter(Bucket.name == bucketName).count() != 0:
+            raise falcon.HTTPInvalidParam("Bucket %s already exists." % bucketName,
+                                          "BucketName")
+
+def getBucketUuid(req):
+    bucketName = getBucketName(req)
+    # get bucket uuid from db
+    bk = session.query(Bucket).filter(Bucket.name == bucketName).first()
+    if bk is None:
+        raise falcon.HTTPBadRequest("Bucket %s doesn't exist" % bucketName,)
+    return bk.uuid
+
+def getBucketName(req):
+    host = req.get_header('Host')
+    bucketName = host.split('.')[0]
+    return bucketName
+
 
 class Bucket(BaseModel):
     __tablename__ = 'bucket'
@@ -32,34 +54,26 @@ class Bucket(BaseModel):
         headers = {'x-bucket-uuid': req.context['bucketUuid']}
         r = requests.get(url, headers=headers)
 
-        resp.set_header('FoundBucket', req.context['bucketUuid'])
-        resp.body = r.text
+        resp.set_header('x-bucket-uuid', req.context['bucketUuid'])
+        resp.status_code = r.status_code
 
+    @falcon.before(validateBucketName)
     def on_put(self, req, resp):
         esx_host = getEsxHosts()[0]
 
+        # header "BucketName: test"
         url = 'http://%s' % esx_host
         r = requests.put(url)
         uuid = r.headers['x-bucket-uuid']
-
-        bucketName = getBucketName(req)
-        bucket = Bucket(name=bucketName, uuid=uuid)
+        
+        bucket = Bucket(name=getBucketName(req), uuid=uuid)
         session.add(bucket)
         session.commit()
 
         resp.set_header('CreateBucket', bucket.uuid)
-        resp.body = ('%s\n') % bucket.name
+        resp.status_code = r.status_code
 
-def getBucketUuid(req):
-    bucketName = getBucketName(req)
-    # get bucket uuid from db
-    bk = session.query(Bucket).filter(Bucket.name == bucketName).first()
-    return bk.uuid
 
-def getBucketName(req):
-    # host = req.get_header('Host')
-    # bucketName = host.split('.')[0]
-    return req.get_header('BucketName')
 
 
 # def init_db():
@@ -67,5 +81,3 @@ def getBucketName(req):
 
 # def drop_db():
 #     BaseModel.metadata.drop_all(engine)
-
-

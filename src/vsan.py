@@ -2,7 +2,7 @@ import json
 import logging
 import falcon
 
-from Bucket import Bucket
+from Bucket import Bucket, getBucketUuid
 from Object import Object
 
 from sqlalchemy import create_engine
@@ -27,19 +27,9 @@ class AuthZCheck(object):
 class SetBucketUuid(object):
     def process_request(self, req, resp):
         if not (req.method == 'PUT' and req.path == '/'):
-            uuid = self.getBucketUuid(req)
+            uuid = getBucketUuid(req)
             req.context['bucketUuid'] = uuid
 
-    def getBucketUuid(self, req):
-        bucketName = self.getBucketName(req)
-        # get bucket uuid from db
-        bk = session.query(Bucket).filter(Bucket.name == bucketName).first()
-        return bk.uuid
-
-    def getBucketName(self, req):
-        # host = req.get_header('Host')
-        # bucketName = host.split('.')[0]
-        return req.get_header('BucketName')
 
 app = falcon.API(middleware=[
     AuthZCheck(),
